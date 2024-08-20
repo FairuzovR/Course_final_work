@@ -1,10 +1,28 @@
+import logging
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
-from django.core.validators import RegexValidator
+
 from .utils import normalize_phone_number
-import logging
+import random
 logger = logging.getLogger('user')
+
+
+class PhoneNumberVerification(models.Model):
+    phone_number = models.CharField(max_length=15, unique=True)
+    verification_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def generate_code(self):
+        self.verification_code = str(random.randint(1000, 9999))
+        self.expires_at = timezone.now() + timezone.timedelta(minutes=5)
+        self.save()
+
+    def is_valid(self):
+        return timezone.now() <= self.expires_at
 
 
 class UserManager(BaseUserManager):
