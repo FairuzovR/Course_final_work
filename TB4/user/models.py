@@ -1,4 +1,5 @@
 import logging
+import random
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator
@@ -6,23 +7,35 @@ from django.db import models
 from django.utils import timezone
 
 from .utils import normalize_phone_number
-import random
+
 logger = logging.getLogger('user')
 
 
 class PhoneNumberVerification(models.Model):
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(
+        max_length=15,
+        unique=True,
+        validators=[RegexValidator(
+            regex=r'^\+?1?\d{9,15}$',
+            message="Номер телефона должен быть в формате: '+999999999'. \
+Разрешено от 9 до 15 ."
+        )]
+    )
     verification_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
-    def generate_code(self):
-        self.verification_code = str(random.randint(1000, 9999))
-        self.expires_at = timezone.now() + timezone.timedelta(minutes=5)
-        self.save()
+    def save(self, *args, **kwargs):
+        self.phone_number = normalize_phone_number(self.phone_number)
+        self.code_update()
+        super().save(*args, **kwargs)
 
-    def is_valid(self):
-        return timezone.now() <= self.expires_at
+    def code_update(self):
+        self.verification_code = str(random.randint(1000, 9999))
+        self.expires_at = timezone.now() + timezone.timedelta(minutes=10)
+
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
 
 
 class UserManager(BaseUserManager):
@@ -43,7 +56,8 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     phone_number = models.CharField(
-            max_length=15, unique=True,
+            max_length=15,
+            unique=True,
             validators=[RegexValidator(
                 regex=r'^\+?1?\d{9,15}$',
                 message="Номер телефона должен быть в формате: '+999999999'. \
