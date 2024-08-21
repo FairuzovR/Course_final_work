@@ -68,11 +68,28 @@ class User(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    invite_code = models.CharField(max_length=6, unique=True)
+    invited_by = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='invited_users'
+    )
 
     objects = UserManager()
 
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = []
+
+    def generate_invite_code(self):
+        while True:
+            code = str(random.randint(100000, 999999))
+            if not PhoneNumberVerification.objects.filter(
+                verification_code=code
+            ).exists():
+                self.invite_code = code
+                return
 
     def save(self, *args, **kwargs):
         self.phone_number = normalize_phone_number(self.phone_number)
