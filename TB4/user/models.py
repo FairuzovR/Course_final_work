@@ -1,5 +1,6 @@
 import logging
 import random
+import string
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import RegexValidator
@@ -84,10 +85,10 @@ class User(AbstractBaseUser):
 
     def generate_invite_code(self):
         while True:
-            code = str(random.randint(100000, 999999))
-            if not PhoneNumberVerification.objects.filter(
-                verification_code=code
-            ).exists():
+            code = ''.join(
+                random.choices(string.ascii_uppercase + string.digits, k=6)
+            )
+            if not User.objects.filter(invite_code=code).exists():
                 self.invite_code = code
                 return
 
