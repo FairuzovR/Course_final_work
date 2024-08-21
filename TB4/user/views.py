@@ -12,6 +12,12 @@ from .serializers import (ReferralCodeSerializer, UserSerializer,
 
 class SendCodeView(APIView):
     def post(self, request, *args, **kwargs):
+        """
+        Создание пользователя по номеру телефона. Для получения
+        кода отправляется номер телефона. Для создания пользователя
+        на этот же эндпоинт отправляется и номер телефона, и код,
+        который пришел.
+        """
         serializer = VerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data['phone_number']
@@ -50,6 +56,9 @@ class SendCodeView(APIView):
 
 
 class UserRetrieveView(RetrieveAPIView):
+    """
+    Получение информации о пользователе.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated,]
@@ -59,6 +68,11 @@ class UserRetrieveView(RetrieveAPIView):
 
 
 class ActivateReferralCodeView(APIView):
+    """
+    Активация реферального кода.
+    """
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
         serializer = ReferralCodeSerializer(data=request.data)
         if serializer.is_valid():
