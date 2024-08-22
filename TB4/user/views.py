@@ -1,3 +1,5 @@
+import time
+
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -21,6 +23,7 @@ class SendCodeView(APIView):
         serializer = VerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data['phone_number']
+            time.sleep(2.0)  # Реализация отправки сообщения
             verify_code, created = PhoneNumberVerification. \
                 objects.get_or_create(
                     phone_number=phone_number

@@ -16,8 +16,7 @@ def jwt_required(view_func):
             )
         try:
             AccessToken(token)
-        except Exception as e:
-            print(f'Exception: {e}')
+        except Exception:
             return JsonResponse({'detail': 'Invalid token.'}, status=401)
         return view_func(request, *args, **kwargs)
 
