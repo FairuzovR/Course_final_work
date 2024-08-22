@@ -3,49 +3,131 @@
 Профиль
 {% endblock %}
 {% block content %}
-<div id="user-data-container" class="container mt-5">
-    <h2 class="text-center">Информация о пользователе</h2>
-    <div id="user-data" class="card p-4 shadow-sm">
-        Загрузка данных...
-    </div>
-</div>
-
-<style>
-    #user-data-container {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    #user-data {
-        background-color: #f8f9fa;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 20px;
-        font-family: Arial, sans-serif;
-        white-space: pre-wrap;
-        overflow-wrap: break-word;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-            axios.get('/api/user/me/', {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            })
-            .then(response => {
-                const userDataElement = document.getElementById('user-data');
-                userDataElement.textContent = JSON.stringify(response.data, null, 2);
-            })
-            .catch(error => {
-                console.error('Ошибка при получении данных:', error);
-                document.getElementById('user-data').textContent = 'Ошибка при загрузке данных.';
-            });
-        } else {
-            document.getElementById('user-data').textContent = 'Необходима авторизация.';
+    <style>
+        .container {
+            margin-top: 30px;
         }
-    });
-</script>
+        .card {
+            margin: 15px 0;
+        }
+        .card-header {
+            font-weight: bold;
+        }
+        .card-body {
+            font-size: 16px;
+        }
+        .data-item {
+            margin-bottom: 10px;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-container input, .form-container button {
+            margin-top: 10px;
+        }
+    </style>
+<body>
+    <div class="container">
+        <div class="card text-center">
+            <div class="card-header">
+                <p class="h3">Информация о пользователе</p>
+            </div>
+            <div class="card-body">
+                <div class="data-item">
+                    <strong>Номер телефона:</strong> <span id="phone_number">Загрузка...</span>
+                </div>
+                <div class="data-item">
+                    <strong>Код приглашения:</strong> <span id="invite_code">Загрузка...</span>
+                </div>
+                <div class="data-item">
+                    <strong>Приглашен:</strong> <span id="invited_by">Загрузка...</span>
+                </div>
+                <div class="data-item">
+                    <strong>Рефералы:</strong>
+                    <ul id="referrals" class="list-unstyled"></ul>
+                </div>
+                <div id="invite-form" class="form-container d-none">
+                    <p>Введите код приглашения:</p>
+                    <form id="inviteForm">
+                        <input type="text" id="inviteCodeInput" class="form-control" placeholder="Код приглашения" required>
+                        <button type="submit" class="btn btn-primary">Применить</button>
+                    </form>
+                    <div id="invite-error" class="text-danger mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const accessToken = localStorage.getItem('accessToken');
+            if (accessToken) {
+                axios.get('/api/user/me/', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                })
+                .then(response => {
+                    const jsonData = response.data;
+                    const phoneNumberElement = document.getElementById('phone_number');
+                    const inviteCodeElement = document.getElementById('invite_code');
+                    const invitedByElement = document.getElementById('invited_by');
+                    const referralsElement = document.getElementById('referrals');
+                    const inviteForm = document.getElementById('invite-form');
+                    const inviteCodeInput = document.getElementById('inviteCodeInput');
+                    const inviteError = document.getElementById('invite-error');
+
+                    phoneNumberElement.textContent = jsonData.phone_number;
+                    inviteCodeElement.textContent = jsonData.invite_code;
+                    invitedByElement.textContent = jsonData.invited_by ? jsonData.invited_by : 'Не указан';
+
+                    if (jsonData.referrals.length > 0) {
+                        jsonData.referrals.forEach(referral => {
+                            const listItem = document.createElement('li');
+                            listItem.textContent = referral;
+                            referralsElement.appendChild(listItem);
+                        });
+                    } else {
+                        referralsElement.innerHTML = '<li>Нет рефералов</li>';
+                    }
+
+                    if (!jsonData.invited_by) {
+                        inviteForm.classList.remove('d-none');
+                    }
+
+                    document.getElementById('inviteForm').addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        const inviteCode = inviteCodeInput.value;
+                        axios.post('/api/user/set-referral/', { referral_code : inviteCode }, {
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            inviteError.textContent = '';
+                            invitedByElement.textContent = response.data.invited_by;  
+                            inviteForm.classList.add('d-none');
+                        })
+                        .catch(error => {
+                            const inviteError = document.getElementById('invite-error');
+                            inviteError.className = 'alert alert-danger mt-3';
+                            if (error.response && error.response.data && error.response.data.detail) {
+                                inviteError.textContent = error.response.data.detail;
+                            } else {
+                                inviteError.textContent = 'Ошибка при применении кода. Пожалуйста, попробуйте снова.';
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('user-data').textContent = 'Ошибка при загрузке данных.';
+                });
+            } else {
+                document.getElementById('user-data').textContent = 'Необходима авторизация.';
+            }
+        });
+    </script>
+</body>
 {% endblock %}
