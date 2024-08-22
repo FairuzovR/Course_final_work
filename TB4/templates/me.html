@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div id="user-data-container" class="container mt-5">
+    <h2 class="text-center">Информация о пользователе</h2>
+    <div id="user-data" class="card p-4 shadow-sm">
+        Загрузка данных...
+    </div>
+</div>
+
+<style>
+    #user-data-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    #user-data {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+            axios.get('/api/user/me/', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            })
+            .then(response => {
+                const userDataElement = document.getElementById('user-data');
+                userDataElement.textContent = JSON.stringify(response.data, null, 2);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении данных:', error);
+                document.getElementById('user-data').textContent = 'Ошибка при загрузке данных.';
+            });
+        } else {
+            document.getElementById('user-data').textContent = 'Необходима авторизация.';
+        }
+    });
+</script>
+{% endblock %}

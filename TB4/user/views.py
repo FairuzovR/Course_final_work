@@ -21,7 +21,6 @@ class SendCodeView(APIView):
         serializer = VerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data['phone_number']
-            print(phone_number)
             verify_code, created = PhoneNumberVerification. \
                 objects.get_or_create(
                     phone_number=phone_number
