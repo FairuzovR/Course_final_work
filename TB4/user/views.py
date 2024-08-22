@@ -21,6 +21,7 @@ class SendCodeView(APIView):
         serializer = VerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
             phone_number = serializer.validated_data['phone_number']
+            print(phone_number)
             verify_code, created = PhoneNumberVerification. \
                 objects.get_or_create(
                     phone_number=phone_number
@@ -34,7 +35,7 @@ class SendCodeView(APIView):
                 verify_code.save()
                 return Response(data, status=status.HTTP_200_OK)
             if serializer.validated_data.get('verification_code') is None:
-                data = {"verification_code": "Введите полученный код"}
+                data = {"detail": "Введите полученный код"}
                 return Response(data, status=status.HTTP_400_BAD_REQUEST)
             if (serializer.validated_data['verification_code'] !=
                verify_code.verification_code):
@@ -43,6 +44,7 @@ class SendCodeView(APIView):
             user, created = User.objects.get_or_create(
                 phone_number=phone_number
             )
+            verify_code.delete()
             if created:
                 user.generate_invite_code()
                 user.save()

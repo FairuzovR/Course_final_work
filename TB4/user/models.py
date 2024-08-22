@@ -15,7 +15,6 @@ logger = logging.getLogger('user')
 class PhoneNumberVerification(models.Model):
     phone_number = models.CharField(
         max_length=15,
-        unique=True,
         validators=[RegexValidator(
             regex=r'^\+?1?\d{9,15}$',
             message="Номер телефона должен быть в формате: '+999999999'. \

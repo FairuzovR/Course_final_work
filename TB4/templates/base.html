@@ -13,13 +13,110 @@
 
     <main>
         {% block content %}
-        <div class="container mt-5">
-          <h3 class="text-center">Введите номер телефона</h3>
+        <div class="container mt-5 justify-content-center flex-column">
+          <div>
+            <p class="text-center h1">Введите номер телефона</p>
+            <form class="justify-content-center d-flex flex-column" id="phoneForm" method="post">
+            {% csrf_token %}
+            <input class="w-25 mx-auto text-center form-control m-4 bg-dark text-light p-2" id="inputPhone" value="+7 (___) ___ - __ - __" >
+            <button type="submit" class="btn btn-outline-dark w-25 mx-auto" onclick="sendVerificationCode()">Отправить</button>
+            </form>
+          </div>
+          <div id="verificationFields" class="d-none">
+            <form class="justify-content-center d-flex flex-column" id="verifyForm" method="post">
+              {% csrf_token %}
+              <p class="text-center h2">Введите код верификации</p>
+              <input class="w-25 mx-auto text-center form-control m-4 bg-dark text-light p-2" id="inputCode" placeholder="Код верификации">
+              <button type="submit" class="btn btn-outline-dark w-25 mx-auto" onclick="verifyCode()">Проверить код</button>
+            </form>
+          </div>
+          <div id="errorMessages" class="" role="alert"></div>
         </div>
+       
         {% endblock %}
     </main>
 
     <footer>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        let inputPhone=document.getElementById("inputPhone");
+        let phoneNumber;
+        inputPhone.oninput=()=>phoneMask(inputPhone)
+        function phoneMask(inputEl) {
+            let patStringArr = "+7 (___) ___ - __ - __".split('');
+            let arrPush = [4, 5, 6, 9, 10, 11, 15, 16, 20, 21]
+            let val = inputEl.value;
+            let arr = val.replace(/\D+/g, "").split('').splice(1);
+            let n;  
+            let ni;
+            arr.forEach((s, i) => {
+                n = arrPush[i];
+                patStringArr[n] = s
+                ni = i
+            });
+            inputEl.value = patStringArr.join('');
+            n ? inputEl.setSelectionRange(n + 1, n + 1) : inputEl.setSelectionRange(22, 22)
+        }
+        function sendVerificationCode() {
+        event.preventDefault();
+        phoneNumber = document.getElementById('inputPhone').value;
+        phoneNumber = phoneNumber.replace(/[^+\d]/g, '');
+        axios.post('/api/user/auth/', {
+            phone_number: phoneNumber
+        })
+        .then(response => {
+            errorMessages.className = '';
+            errorMessages.textContent = '';
+            document.getElementById('verificationFields').classList.remove('d-none');
+            document.getElementById('inputPhone').setAttribute('disabled', 'disabled');
+        })
+        .catch(error => {
+            const errorMessages = document.getElementById('errorMessages');
+            errorMessages.className = 'alert alert-danger mt-3';
+            if (error.response && error.response.data) {
+                errorMessages.textContent = Object.values(error.response.data).join(', ');
+            } else {
+                errorMessages.textContent = 'Произошла ошибка при отправке данных.';
+            }
+        });
+        }
+        function verifyCode() {
+            event.preventDefault();
+            // let phoneNumber = document.getElementById('inputPhone').value.replace(/[^+\d]/g, '');
+            let verificationCode = document.getElementById('inputCode').value;
+            console.log(verificationCode)
+            axios.post('/api/user/auth/', {
+                phone_number: phoneNumber,
+                verification_code: verificationCode
+            }, {
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => {
+                const errorMessages = document.getElementById('errorMessages');
+                errorMessages.className = '';
+                errorMessages.textContent = '';
+                alert(response.data.detail || 'Код подтвержден успешно');
+                // Очистить поля и сбросить форму
+                // document.getElementById('inputPhone').value = '';
+                // document.getElementById('inputCode').value = '';
+                // document.getElementById('verificationFields').classList.add('d-none');
+                // document.getElementById('inputPhone').removeAttribute('disabled');
+                // document.querySelector('button[onclick="sendVerificationCode(event)"]').removeAttribute('disabled');
+            })
+            .catch(error => {
+                console.log(error)
+                const errorMessages = document.getElementById('errorMessages');
+                errorMessages.className = 'alert alert-danger mt-3';
+                if (error.response && error.response.data) {
+                    errorMessages.textContent = Object.values(error.response.data).join(', ');
+                } else {
+                    errorMessages.textContent = 'Произошла ошибка при подтверждении кода.';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
