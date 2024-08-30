@@ -49,6 +49,7 @@ class SendCodeView(APIView):
                verify_code.verification_code):
                 data = {"detail": "Неверно введен код"}
                 return Response(data, status=status.HTTP_400_BAD_REQUEST)
+            #  Создание пользователя
             user, created = User.objects.get_or_create(
                 phone_number=phone_number
             )
