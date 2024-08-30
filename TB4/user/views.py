@@ -28,6 +28,12 @@ class SendCodeView(APIView):
                 objects.get_or_create(
                     phone_number=phone_number
                 )
+            print(verify_code.verification_code)
+            #  Если кода нет, создаем и отправляем ответ, иначе
+            #  после других проверок (если пройдены), создаем пользователя
+            #  на один и тот же эндпоинт требуется два запроса - один
+            #  для получения кода второй для подтверждения
+            #  кода (обрабатывается одним view)
             if created:
                 data = {"detail": "Код отправлен на указанный номер"}
                 return Response(data, status=status.HTTP_201_CREATED)

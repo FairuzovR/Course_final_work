@@ -31,6 +31,8 @@
         <div class="card text-center">
             <div class="card-header">
                 <p class="h3">Информация о пользователе</p>
+                <p><a class="link-danger link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" href="/">Авторизоваться под другим номером</a></p>
+                <p></p><a class="link-danger link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" href="/get-refs">Получить список реферальных кодов</a></p>
             </div>
             <div class="card-body">
                 <div class="data-item">
@@ -107,7 +109,7 @@
                         })
                         .then(response => {
                             inviteError.textContent = '';
-                            invitedByElement.textContent = response.data.invited_by;  
+                            invitedByElement.textContent = response.data.invited_by;
                             inviteForm.classList.add('d-none');
                         })
                         .catch(error => {
